@@ -1,13 +1,7 @@
 #ifndef __PWMNODE_H__
 #define __PWMNODE_H__
 
-#define PWM_CHIP "/sys/class/pwm/pwmchip%d/"
-#define PWM_NODE "/sys/class/pwm/pwmchip%d/pwm%d/"
-#define PWM_EXPORT "export"
-#define PWM_UNEXPORT "unexport"
-#define PWM_ENABLE "enable"
-#define PWM_PERIOD "period"
-#define PWM_DUTY_CYCLE "duty_cycle"
+#include "defines.h"
 
 struct PwmNode {
     int chip;

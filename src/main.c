@@ -5,15 +5,13 @@
 #include <gpiod.h>
 
 #include "pwmNode.h"
-
-#define MICROTOMILLI 1000 
-#define NANOTOMILLI  1000000
+#include "defines.h"
 
 int main(int argc, char** argv){
   // variables
-  struct PwmNode * node;
+  struct PwmNode * leftMotorNode;
   struct gpiod_chip *chip;
-  struct gpiod_line * input1Line, * input2Line;
+  struct gpiod_line * leftMotorInput1, * leftMotorInput2;
   char* period, *dutyCycle;
 
   // Creeate the gpio lines
@@ -24,43 +22,43 @@ int main(int argc, char** argv){
     return 1;
   }
 
-  input1Line = gpiod_chip_get_line(chip, 25);  
-  gpiod_line_request_output(input1Line, "example1", 0);
-  gpiod_line_set_value(input1Line, 1);
+  leftMotorInput1 = gpiod_chip_get_line(chip, LEFT_MOTOR_INPUT1);  
+  gpiod_line_request_output(leftMotorInput1, "example1", 0);
+  gpiod_line_set_value(leftMotorInput1, 1);
 
-  input2Line = gpiod_chip_get_line(chip, 8);  
-  gpiod_line_request_output(input2Line, "example2", 0);
-  gpiod_line_set_value(input2Line, 0);
+  leftMotorInput2 = gpiod_chip_get_line(chip, LEFT_MOTOR_INPUT2);  
+  gpiod_line_request_output(leftMotorInput2, "example2", 0);
+  gpiod_line_set_value(leftMotorInput2, 0);
 
   // Create the PWN Node
-  node = createPwmNode(2, 2);
-  node->setUp(node);
+  leftMotorNode = createPwmNode(LEFT_MOTOR_CHIP, LEFT_MOTOR_CHANNEL);
+  leftMotorNode->setUp(leftMotorNode);
 
   // Set the period of the PWM PIN
-  node->setPeriod(node, 500000);
-  period = node->getPeriod(node);
+  leftMotorNode->setPeriod(leftMotorNode, 500000);
+  period = leftMotorNode->getPeriod(leftMotorNode);
   printf("period set to %s",period);
   free(period);
 
   // Set the duty cycle of the PWM PIN
-  node->setDutyCycle(node, 250000);
-  dutyCycle = node->getDutyCycle(node);
+  leftMotorNode->setDutyCycle(leftMotorNode, 250000);
+  dutyCycle = leftMotorNode->getDutyCycle(leftMotorNode);
   printf("duty cycle set to %s",dutyCycle);
   free(dutyCycle);
 
   // ENABLE THE PIN
-  node->enable(node);
+  leftMotorNode->enable(leftMotorNode);
   usleep(10000 * MICROTOMILLI);
 
   // Clean up pins
-  node->disable(node);  
-  node->close(node);
+  leftMotorNode->disable(leftMotorNode);  
+  leftMotorNode->close(leftMotorNode);
 
-  gpiod_line_set_value(input1Line, 0);
-  gpiod_line_set_value(input2Line, 0);
+  gpiod_line_set_value(leftMotorInput1, 0);
+  gpiod_line_set_value(leftMotorInput2, 0);
 
-  gpiod_line_release(input1Line);
-  gpiod_line_release(input2Line);
+  gpiod_line_release(leftMotorInput1);
+  gpiod_line_release(leftMotorInput2);
   gpiod_chip_close(chip);  
   return 0;
 }
