@@ -3,62 +3,61 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <gpiod.h>
+#include <signal.h>
 
 #include "pwmNode.h"
 #include "defines.h"
+#include "motorTask.h"
 
-int main(int argc, char** argv){
-  // variables
-  struct PwmNode * leftMotorNode;
-  struct gpiod_chip *chip;
-  struct gpiod_line * leftMotorInput1, * leftMotorInput2;
-  char* period, *dutyCycle;
+//GLOBAL VARS
+struct PwmNode * leftMotor = NULL;
+struct gpiod_chip *chip;
+struct gpiod_line * leftMotorInput1, * leftMotorInput2;
 
-  // Creeate the gpio lines
+void setUp() {
   chip = gpiod_chip_open("/dev/gpiochip4");
 
   if (chip == NULL) {
     printf("chip not found\n");
-    return 1;
+    exit(1);
   }
 
+  // SET UP LEFT MOTOR INPUT PINS
   leftMotorInput1 = gpiod_chip_get_line(chip, LEFT_MOTOR_INPUT1);  
   gpiod_line_request_output(leftMotorInput1, "example1", 0);
-  gpiod_line_set_value(leftMotorInput1, 1);
-
   leftMotorInput2 = gpiod_chip_get_line(chip, LEFT_MOTOR_INPUT2);  
   gpiod_line_request_output(leftMotorInput2, "example2", 0);
-  gpiod_line_set_value(leftMotorInput2, 0);
+  leftMotor = createPwmNode(LEFT_MOTOR_CHIP, LEFT_MOTOR_CHANNEL);
+  leftMotor->setUp(leftMotor);
+  updateMotor(leftMotor, 500000, 250000, leftMotorInput1, 1, leftMotorInput2, 0); 
+  leftMotor->enable(leftMotor);
+}
 
-  // Create the PWN Node
-  leftMotorNode = createPwmNode(LEFT_MOTOR_CHIP, LEFT_MOTOR_CHANNEL);
-  leftMotorNode->setUp(leftMotorNode);
-
-  // Set the period of the PWM PIN
-  leftMotorNode->setPeriod(leftMotorNode, 500000);
-  period = leftMotorNode->getPeriod(leftMotorNode);
-  printf("period set to %s",period);
-  free(period);
-
-  // Set the duty cycle of the PWM PIN
-  leftMotorNode->setDutyCycle(leftMotorNode, 250000);
-  dutyCycle = leftMotorNode->getDutyCycle(leftMotorNode);
-  printf("duty cycle set to %s",dutyCycle);
-  free(dutyCycle);
-
-  // ENABLE THE PIN
-  leftMotorNode->enable(leftMotorNode);
-  usleep(10000 * MICROTOMILLI);
-
-  // Clean up pins
-  leftMotorNode->disable(leftMotorNode);  
-  leftMotorNode->close(leftMotorNode);
+void cleanUp() {
+  // CLEAN UP LEFT MOTOR PINS
+  leftMotor->disable(leftMotor);  
+  leftMotor->close(leftMotor);
 
   gpiod_line_set_value(leftMotorInput1, 0);
   gpiod_line_set_value(leftMotorInput2, 0);
 
   gpiod_line_release(leftMotorInput1);
   gpiod_line_release(leftMotorInput2);
-  gpiod_chip_close(chip);  
+  gpiod_chip_close(chip); 
+}
+
+void handleCtrlC(int signum) {
+  printf("\nCtrl+C pressed. cleaning up...\n");
+  cleanUp();
+  printf("exiting\n");
+  exit(signum);
+}
+
+int main(int argc, char** argv){
+  signal(SIGINT, handleCtrlC);
+  setUp();
+  usleep(10000 * MICROTOMILLI);
+
+  cleanUp();
   return 0;
 }
