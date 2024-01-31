@@ -1,19 +1,21 @@
-#include <gpiod.h>
+#include <avr/io.h>
+
 #include "ledTask.h"
 
 // State machine to control LED A
-int ledATick(int state) {
+int ledTick(int state) {
   switch (state) {
     case LED_OFF:
       state = LED_ON;
-      gpiod_line_set_value(ledLine, 1);
+      PORTB |= (1 << PORTB5);
       break;
     case LED_ON:
       state = LED_OFF;
-      gpiod_line_set_value(ledLine, 0);
+      PORTB &= ~(1 << PORTB5);
       break;
     default:
       break;
   }
+
   return state;
 }

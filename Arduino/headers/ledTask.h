@@ -3,6 +3,6 @@
 
 enum LEDState {LED_OFF, LED_ON};
 
-int ledATick(int);
+int ledTick(int);
 
 #endif
