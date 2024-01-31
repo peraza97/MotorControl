@@ -2,6 +2,17 @@
 
 int motorTask(int state)
 {
+  switch(state) {
+    case OFF:
+      state = RUNNING;
+      break;
+    case RUNNING:
+      state = RUNNING;
+      break;
+    default:
+      break;
+  }
+
   return state;
 }
 

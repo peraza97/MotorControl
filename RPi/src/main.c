@@ -29,7 +29,7 @@ void setUp() {
   gpiod_line_request_output(leftMotorInput2, "example2", 0);
   leftMotor = createPwmNode(LEFT_MOTOR_CHIP, LEFT_MOTOR_CHANNEL);
   leftMotor->setUp(leftMotor);
-  updateMotor(leftMotor, 500000, 250000, leftMotorInput1, 1, leftMotorInput2, 0); 
+  updateMotor(leftMotor, 0, 0, leftMotorInput1, 1, leftMotorInput2, 0); 
   leftMotor->enable(leftMotor);
 }
 
@@ -56,7 +56,11 @@ void handleCtrlC(int signum) {
 int main(int argc, char** argv){
   signal(SIGINT, handleCtrlC);
   setUp();
-  usleep(10000 * MICROTOMILLI);
+
+  updateMotor(leftMotor, 500000, 200000, NULL, 0, NULL, 0);
+  usleep(5000 * MICROTOMILLI);
+  updateMotor(leftMotor, 500000, 350000, NULL, 0, NULL, 0);
+  usleep(5000 * MICROTOMILLI);
 
   cleanUp();
   return 0;
