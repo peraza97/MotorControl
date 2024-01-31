@@ -16,7 +16,7 @@ RM = rm
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
 OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
 
-all: clean build upload
+all: build upload
 
 build:
 	$(AVR_COMPILE) -I $(HEADERS_DIR) -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -o $(OBJ_DIR)/$(EXECUTABLE).elf $(SRC_FILES)
