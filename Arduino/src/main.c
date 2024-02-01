@@ -3,15 +3,12 @@
 #include <util/delay.h>
 
 #include "defines.h"
-#include "SMTask.h"
 #include "ledTask.h"
 #include "pwmTask.h"
+#include "task.h"
+#include "timer.h"
 
 double dutyCycle = 50;
-
-ISR(TIMER0_OVF_vect) {
-  OCR0A = (dutyCycle/100.0) * 255; 
-}
 
 void setUpLed() {
    // ONBOARD LED B5
@@ -24,8 +21,6 @@ void setUpPWMLed() {
   TIMSK0 = (1 << TOIE0); // OVERFLOW INTERRUPT 
 
   OCR0A = (dutyCycle/100.0) * 255; // COUNTER FOR TICKS 
-  
-  sei();
 
   TCCR0B = (1 << CS01); // PRESCALER
 }
@@ -53,7 +48,10 @@ int main(void) {
   int numTasks = sizeof(tasks) / sizeof(struct SMTask);
   
   setUp();
-
+  
+  TimerSet(PERIOD);
+  TimerOn();
+  
   while(1) {
     for(int i = 0; i < numTasks; ++i) {
       if (tasks[i].elapsedTime >= tasks[i].period) {
@@ -63,8 +61,14 @@ int main(void) {
       tasks[i].elapsedTime += PERIOD;
     }
 
-    _delay_ms(PERIOD);
+    while(!TimerFlag);
+    TimerFlag=0;
   }
 
   return 0;
 }
+
+ISR(TIMER0_OVF_vect) {
+  OCR0A = (dutyCycle/100.0) * 255; 
+}
+
