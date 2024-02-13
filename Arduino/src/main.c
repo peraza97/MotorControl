@@ -1,58 +1,106 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
-#include "defines.h"
 #include "ledTask.h"
 #include "pwmTask.h"
+#include "servoTask.h"
 #include "task.h"
-#include "timer.h"
+#include "usart.h"
+#include "8bitTimer.h"
 
+#define PERIOD 500
+
+// GLOBAL VARIABLES
 double dutyCycle = 50;
+int servoDegree = SERVO_BOTTOM;
 
-void setUpLed() {
-   // ONBOARD LED B5
-  DDRB = (1 << DDB5);
-}
-
-void setUpPWMLed() {
-  DDRD = (1 << DDD6);
-  TCCR0A = (1 << COM0A1) | (1 << WGM00) | (1 << WGM01); // MODE
-  TIMSK0 = (1 << TOIE0); // OVERFLOW INTERRUPT 
-
-  OCR0A = (dutyCycle/100.0) * 255; // COUNTER FOR TICKS 
-
-  TCCR0B = (1 << CS01); // PRESCALER
+void clearPorts() {
+  DDRB = 0;
+  PORTB = 0;
 }
 
 void setUp() {
-  setUpLed();
-  setUpPWMLed();
+  clearPorts();
+  ledSetUp();
+  servoSetUp();
+}
+
+void debugging() {
+  clearPorts();
+  USARTSetup();
+  ledSetUp();
+  servoSetUp();
+  
+  Timer8BitSet(PERIOD);
+  Timer8BitOn();
+
+  int direction = 1;
+  int ledState = 1;
+  
+  while(1) {
+    ledState = !ledState;
+
+    char servo[6];
+    sprintf(servo, "%d\n", servoDegree);
+    USARTWriteString(servo);
+
+    if (ledState) {
+      PORTB |= (1 << PORTB5);
+    }
+    else {
+      PORTB &= ~(1 << PORTB5);
+    }
+
+    if (direction) {
+    servoDegree += 200;
+      if (servoDegree >= SERVO_TOP) {
+        direction = 0;
+      }
+    }
+    else {
+      servoDegree -= 200;
+      if (servoDegree <= SERVO_BOTTOM) {
+        direction = 1;
+      }
+    }
+    servoUpdate(servoDegree);
+
+    while(!Timer8BitFlag){}
+    Timer8BitFlag=0;
+  }
+
 }
 
 int main(void) {
+  debugging();
+  return 1;
+
   struct SMTask ledTask;
   ledTask.state = 0;
   ledTask.period = 1000;
   ledTask.elapsedTime = 1000;
   ledTask.TickFct = &ledTick;
 
-  struct SMTask pwmTask;
-  pwmTask.state = 0;
-  pwmTask.period = 500;
-  pwmTask.elapsedTime = 500;
-  pwmTask.TickFct = &pwmTick;
+  struct SMTask servoTask;
+  servoTask.state = 0;
+  servoTask.period = 100;
+  servoTask.elapsedTime = 100;
+  servoTask.TickFct = &servoTick;
 
-  struct SMTask tasks[2] = { ledTask, pwmTask };
+  struct SMTask tasks[] = { ledTask, servoTask };
   
   int numTasks = sizeof(tasks) / sizeof(struct SMTask);
-  
+
   setUp();
-  
-  TimerSet(PERIOD);
-  TimerOn();
-  
+  Timer8BitSet(PERIOD);
+  Timer8BitOn();
+
   while(1) {
+
     for(int i = 0; i < numTasks; ++i) {
       if (tasks[i].elapsedTime >= tasks[i].period) {
         tasks[i].state = tasks[i].TickFct(tasks[i].state);
@@ -61,14 +109,9 @@ int main(void) {
       tasks[i].elapsedTime += PERIOD;
     }
 
-    while(!TimerFlag);
-    TimerFlag=0;
+    while(!Timer8BitFlag);
+    Timer8BitFlag=0;
   }
 
   return 0;
 }
-
-ISR(TIMER0_OVF_vect) {
-  OCR0A = (dutyCycle/100.0) * 255; 
-}
-

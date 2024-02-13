@@ -20,7 +20,7 @@ all: build upload
 
 build:
 	$(AVR_COMPILE) -I $(HEADERS_DIR) -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -o $(OBJ_DIR)/$(EXECUTABLE).elf $(SRC_FILES)
-	$(AVR_COPY) -j .text -O ihex $(OBJ_DIR)/$(EXECUTABLE).elf $(OBJ_DIR)/$(EXECUTABLE).hex
+	$(AVR_COPY) -j .text -j .data -j .rodata -O ihex $(OBJ_DIR)/$(EXECUTABLE).elf $(OBJ_DIR)/$(EXECUTABLE).hex
 
 upload:
 	$(AVR_UPLOAD) -v -p $(DEVICE) -c arduino -P $(PORT) -b $(BAUD) -U flash:w:$(OBJ_DIR)/$(EXECUTABLE).hex:i 

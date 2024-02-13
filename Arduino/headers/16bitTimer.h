@@ -3,24 +3,24 @@
 // This software is provided with no warranties.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __TIMER_H__
-#define __TIMER_H__
+#ifndef __16BITTIMER_H__
+#define __16BITTIMER_H__
 
 #include <avr/interrupt.h>
 
-volatile unsigned char TimerFlag = 0; // TimerISR() sets this to 1. C programmer should clear to 0.
+volatile unsigned char Timer16BitFlag = 0; // TimerISR() sets this to 1. C programmer should clear to 0.
 
 // Internal variables for mapping AVR's ISR to our cleaner TimerISR model.
-unsigned long _avr_timer_M = 1; // Start count from here, down to 0. Default 1ms
-unsigned long _avr_timer_cntcurr = 0; // Current internal count of 1ms ticks
+unsigned long _avr_16bitTimer_M = 1; // Start count from here, down to 0. Default 1ms
+unsigned long _avr_16bitTimer_cntcurr = 0; // Current internal count of 1ms ticks
 
 // Set TimerISR() to tick every M ms
-void TimerSet(unsigned long M) {
-	_avr_timer_M = M;
-	_avr_timer_cntcurr = _avr_timer_M;
+void Timer16BitSet(unsigned long M) {
+	_avr_16bitTimer_M = M;
+	_avr_16bitTimer_cntcurr = _avr_16bitTimer_M;
 }
 
-void TimerOn() {
+void Timer16BitOn() {
 	// AVR timer/counter controller register TCCR1
 	TCCR1B 	= 0x0B;	// bit3 = 1: CTC mode (clear timer on compare)
 					// bit2bit1bit0=011: prescaler /64
@@ -41,28 +41,28 @@ void TimerOn() {
 	TCNT1 = 0;
 
 	// TimerISR will be called every _avr_timer_cntcurr milliseconds
-	_avr_timer_cntcurr = _avr_timer_M;
+	_avr_16bitTimer_cntcurr = _avr_16bitTimer_M;
 
 	//Enable global interrupts
 	SREG |= 0x80;	// 0x80: 1000000
 }
 
-void TimerOff() {
+void Timer16BitOff() {
 	TCCR1B 	= 0x00; // bit3bit2bit1bit0=0000: timer off
 }
 
-void TimerISR() {
-	TimerFlag = 1;
+void Timer16BitISR() {
+	Timer16BitFlag = 1;
 }
 
 // In our approach, the C programmer does not touch this ISR, but rather TimerISR()
 ISR(TIMER1_COMPA_vect)
 {
 	// CPU automatically calls when TCNT0 == OCR0 (every 1 ms per TimerOn settings)
-	_avr_timer_cntcurr--; 			// Count down to 0 rather than up to TOP
-	if (_avr_timer_cntcurr == 0) { 	// results in a more efficient compare
-		TimerISR(); 				// Call the ISR that the user uses
-		_avr_timer_cntcurr = _avr_timer_M;
+	_avr_16bitTimer_cntcurr--; 			// Count down to 0 rather than up to TOP
+	if (_avr_16bitTimer_cntcurr == 0) { 	// results in a more efficient compare
+		Timer16BitISR(); 				// Call the ISR that the user uses
+		_avr_16bitTimer_cntcurr = _avr_16bitTimer_M;
 	}
 }
 

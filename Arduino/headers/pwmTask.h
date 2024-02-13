@@ -5,6 +5,7 @@ enum PWMState {PWM_OFF, PWM_RUNNING };
 
 extern double dutyCycle;
 
+void pwmSetUp();
 int pwmTick(int);
 
 #endif

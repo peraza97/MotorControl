@@ -3,6 +3,8 @@
 
 enum LEDState {LED_OFF, LED_ON};
 
+void ledSetUp();
+
 int ledTick(int);
 
 #endif
